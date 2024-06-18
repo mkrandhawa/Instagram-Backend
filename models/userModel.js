@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  email: {
+  emailPhone: {
     type: String,
     required: [true, "Please provide an email address"],
     unique: true,
@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema({
     minLength: 8,
     required: [true, "Please provide a password"],
     select: false,
+  },
+  dob:{
+    month: String,
+    day: String,
+    year: String
   },
   likedPosts: [
     {
