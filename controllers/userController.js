@@ -5,6 +5,8 @@ const User = require('../models/userModel');
 // REGISTER THE USER
 exports.registerUser = async(req, res, next)=>{
 
+    try{
+
     const userData = req.body
     const user =  await User.create({
         emailPhone: userData.emailPhone,
@@ -25,13 +27,27 @@ exports.registerUser = async(req, res, next)=>{
             user
         }
     })
+    }
+    catch (error) {
+        if (error.code === 11000) {
+            // Handle duplicate key error
+            const field = Object.keys(error.keyPattern)[0];
+            res.status(400).json({
+                status: 'error',
+                message: `The ${field} already exists. Please choose another one.`
+            });
+        } else {
+            res.status(400).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
 }
 
 // LOGIN THE USER
 exports.login = async(req, res, next)=>{
-
-    console.log(req.body)
- 
+    try{
 
     const {username, password} = req.body;
     console.log(username)
@@ -51,7 +67,7 @@ exports.login = async(req, res, next)=>{
     console.log('This is user',user)
 
     //Check if there is any user with that data
-    if (!user || !(password === user.password)){
+    if (!user || !(await user.correctPassword(password, user.password))){
         return next ( 
             res.status(401).json({
                 status:'error',
@@ -66,4 +82,12 @@ exports.login = async(req, res, next)=>{
         })
         
     }
+    }
+    catch (error) {
+            res.status(400).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    
 }
