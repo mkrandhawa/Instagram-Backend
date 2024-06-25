@@ -29,13 +29,13 @@ const userSchema = new mongoose.Schema({
   },
   likedPosts: [
     {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.ObjectId,
       ref: "Post",
     },
   ],
   savedPosts: [
     {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.  ObjectId,
       ref: "Post",
     },
   ],
