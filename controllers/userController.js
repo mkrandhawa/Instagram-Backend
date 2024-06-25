@@ -5,7 +5,7 @@ const User = require('../models/userModel');
 // REGISTER THE USER
 exports.registerUser = async(req, res, next)=>{
 
-    const userData = req.body.user
+    const userData = req.body
     const user =  await User.create({
         emailPhone: userData.emailPhone,
         name: userData.name,
@@ -33,7 +33,7 @@ exports.login = async(req, res, next)=>{
     console.log(req.body)
  
 
-    const {username, password} = req.body.user;
+    const {username, password} = req.body;
     console.log(username)
 
     //Check if the username or password fields are available
