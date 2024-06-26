@@ -109,9 +109,8 @@ exports.login = async(req, res, next)=>{
     }
     else{
         console.log('Logged in successfully')
-        res.status(200).json({
-            status: 'success',
-        })
+
+        createJWT(user, 200, res);
         
     }
     }
