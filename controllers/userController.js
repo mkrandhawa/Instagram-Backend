@@ -1,7 +1,7 @@
 const mongoose= require('mongoose');
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
-
+const {promisify} = require('util');
 
 //SIGNING JWT
 const signJWT= (id)=>{
@@ -12,7 +12,7 @@ const signJWT= (id)=>{
 
 // CREATING JWT
 const createJWT = (user, statusCode, res) =>{
-    const jwt = signJWT(user._id);
+    const token = signJWT(user._id);
 
     const expiry = parseInt(process.env.EXPIRY);
 
@@ -23,13 +23,13 @@ const createJWT = (user, statusCode, res) =>{
         httpOnly:true
     }
 
-    res.cookie('jwt', jwt, cookieJwt);
+    res.cookie('jwt', token, cookieJwt);
 
     user.password  = undefined;
 
     res.status(statusCode).json({
         status: 'success',
-        jwt,
+        jwt: token,
         data:{
             user
         }
@@ -77,12 +77,12 @@ exports.registerUser = async(req, res, next)=>{
     }
 }
 
+
 // LOGIN THE USER
 exports.login = async(req, res, next)=>{
     try{
 
     const {username, password} = req.body;
-    console.log(username)
 
     //Check if the username or password fields are available
     if (!username || !password){
@@ -122,3 +122,86 @@ exports.login = async(req, res, next)=>{
         }
     
 }
+
+
+// PROTECT THE PAGE RESTRICTED TO LOGGED IN USERS ONLY
+exports.protect = async(req, res, next) =>{
+    console.log(req.cookies);
+    let token;
+    if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer") //JWT is mostly in the header and starts with "Bearer"
+    ) {
+    token = req.headers.authorization.split(" ")[1]; //getting the JWT
+    } else if (req.cookies.jwt) {
+    token = req.cookies.jwt; //If all previous case are not available get the JWT from the cookie
+    }
+
+    //Check if the token exists
+    if (!token) {
+    return next(
+        res.status(401).json({
+            status: 'fail',
+            message: 'ou are not logged in! Please login to get access'
+        })
+    );
+    }
+
+    //2)Validate the token - Verification stage verify if the data has been manipulated or expired
+    const decoded = await promisify(jwt.verify)(token, process.env.SECRET_KEY);
+
+    //3) Check if the user still exists
+    const freshUser = await User.findById(decoded.id);
+    if (!freshUser) {
+    return next(
+        res.status(401).json({
+            status: 'fail',
+            message: 'The user belonging to this token no longer exists'
+        })
+        
+    );
+    }
+
+    //Grant access to the protected route
+    req.user = freshUser;
+    res.locals.user = freshUser;
+    next();
+}
+
+
+exports.isLoggedIn = async (req, res, next) => {
+    //If there is no cookie there is no logged in user
+    console.log(req.cookies.jwt)
+    if (req.cookies.jwt) {
+      try {
+        //1)verifies the token
+        const decoded = await promisify(jwt.verify)(
+          req.cookies.jwt,
+          process.env.SECRET_KEY
+        );
+  
+        //2) Check if the user still exists
+        const freshUser = await User.findById(decoded.id);
+        if (!freshUser) {
+          return next();
+        }
+  
+        // //3)Check if user changed password after the JWT was issued#
+        // //iat => issued at
+        // if (freshUser.changedPasswordAfter(decoded.iat)) {
+        //   return next();
+        // }
+        //THERE IS A LOGGED IN USER
+        res.locals.user = freshUser;
+        res.status(200).json({
+            status:'success',
+            message: 'The user is logged',
+            jwt: req.cookies.jwt
+        })
+        return next();
+      } catch (err) {
+        return next();
+      }
+    }
+    next();
+  };
