@@ -1,5 +1,40 @@
 const mongoose= require('mongoose');
 const User = require('../models/userModel');
+const jwt = require('jsonwebtoken');
+
+
+//SIGNING JWT
+const signJWT= (id)=>{
+    return jwt.sign({id}, process.env.SECRET_KEY,{
+        expiresIn: process.env.EXPIRY
+    })
+}
+
+// CREATING JWT
+const createJWT = (user, statusCode, res) =>{
+    const jwt = signJWT(user._id);
+
+    const expiry = parseInt(process.env.EXPIRY);
+
+    const expiryTime = expiry * 24 * 60 * 60 * 1000;
+
+    const cookieJwt = {
+        expires: new Date( Date.now() + expiryTime),
+        httpOnly:true
+    }
+
+    res.cookie('jwt', jwt, cookieJwt);
+
+    user.password  = undefined;
+
+    res.status(statusCode).json({
+        status: 'success',
+        jwt,
+        data:{
+            user
+        }
+    })
+}
 
 
 // REGISTER THE USER
@@ -21,12 +56,9 @@ exports.registerUser = async(req, res, next)=>{
 
     })
 
-    res.status(201).json({
-        status:'success',
-        data:{
-            user
-        }
-    })
+    createJWT(user, 201, res)
+
+    
     }
     catch (error) {
         if (error.code === 11000) {
