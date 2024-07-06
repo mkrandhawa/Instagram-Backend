@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     day: String,
     year: String
   },
+  picture:{
+    type:String,
+    default:'images/default.svg'
+  },
   likedPosts: [
     {
       type: mongoose.Schema.ObjectId,
