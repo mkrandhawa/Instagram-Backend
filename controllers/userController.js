@@ -191,12 +191,16 @@ exports.isLoggedIn = async (req, res, next) => {
         // if (freshUser.changedPasswordAfter(decoded.iat)) {
         //   return next();
         // }
+
         //THERE IS A LOGGED IN USER
         res.locals.user = freshUser;
         res.status(200).json({
             status:'success',
             message: 'The user is logged',
-            jwt: req.cookies.jwt
+            jwt: req.cookies.jwt,
+            data:{
+                freshUser
+            }
         })
         return next();
       } catch (err) {
