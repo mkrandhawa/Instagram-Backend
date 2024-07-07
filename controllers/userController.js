@@ -142,7 +142,7 @@ exports.protect = async(req, res, next) =>{
     return next(
         res.status(401).json({
             status: 'fail',
-            message: 'ou are not logged in! Please login to get access'
+            message: 'You are not logged in! Please login to get access'
         })
     );
     }
@@ -171,7 +171,6 @@ exports.protect = async(req, res, next) =>{
 
 exports.isLoggedIn = async (req, res, next) => {
     //If there is no cookie there is no logged in user
-    console.log(req.cookies.jwt)
     if (req.cookies.jwt) {
       try {
         //1)verifies the token
