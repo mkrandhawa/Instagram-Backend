@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema({
     type:String,
     default:'images/default.svg'
   },
+  following: [
+    {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+    },
+  ],
   likedPosts: [
     {
       type: mongoose.Schema.ObjectId,
