@@ -96,7 +96,6 @@ exports.login = async(req, res, next)=>{
     
     const user = await User.findOne({emailPhone: username}).select("+password");
 
-    console.log('This is user',user)
 
     //Check if there is any user with that data
     if (!user || !(await user.correctPassword(password, user.password))){
@@ -126,7 +125,6 @@ exports.login = async(req, res, next)=>{
 
 // PROTECT THE PAGE RESTRICTED TO LOGGED IN USERS ONLY
 exports.protect = async(req, res, next) =>{
-    console.log(req.cookies);
     let token;
     if (
     req.headers.authorization &&
@@ -168,7 +166,7 @@ exports.protect = async(req, res, next) =>{
     next();
 }
 
-
+// CHECK IF THE USER IS LOGGED IN
 exports.isLoggedIn = async (req, res, next) => {
     //If there is no cookie there is no logged in user
     if (req.cookies.jwt) {
@@ -208,3 +206,28 @@ exports.isLoggedIn = async (req, res, next) => {
     }
     next();
   };
+
+// GET ALL USERS
+
+exports.getAll = async(req, res, next)=>{   
+        try{
+            
+            const currentUser = req.user._id
+            const users = await User.find({_id:{$ne:currentUser}});
+
+            res.status(200).json({
+                status: 'success',
+                data:{
+                    users
+                }
+            })
+            
+        }catch (err){
+            res.status(500).json({
+                status: 'fail',
+                message: err.message,
+            });
+        }
+    
+}
+
