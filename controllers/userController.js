@@ -53,7 +53,6 @@ exports.registerUser = async(req, res, next)=>{
             day: userData.dob.day,
             year: userData.dob.year
         }
-
     })
 
     createJWT(user, 201, res)
@@ -84,6 +83,7 @@ exports.login = async(req, res, next)=>{
 
     const {username, password} = req.body;
 
+
     //Check if the username or password fields are available
     if (!username || !password){
         return next(
@@ -95,6 +95,7 @@ exports.login = async(req, res, next)=>{
     }
     
     const user = await User.findOne({emailPhone: username}).select("+password");
+
 
 
     //Check if there is any user with that data
@@ -231,3 +232,36 @@ exports.getAll = async(req, res, next)=>{
     
 }
 
+exports.addFollower = async (req, res, next) => {
+    try {
+      console.log(req.user.id);
+      const userId = req.user.id; 
+  
+      // Use $push to add a new follower to the "following" array
+      const updatedUser = await User.findByIdAndUpdate(
+        userId, // Pass the ID as the first argument
+        { $push: { following: req.body.following } }, // Add new follower(s) to the "following" field
+        { new: true, runValidators: true } // Return the updated document and validate input
+      );
+  
+      if (!updatedUser) {
+        return res.status(404).json({
+          status: "fail",
+          message: "User not found",
+        });
+      }
+  
+      res.status(200).json({
+        status: "success",
+        message: "Followers added",
+        data: updatedUser,
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "error",
+        message: "An error occurred while adding followers",
+        error: error.message,
+      });
+    }
+  };
+  
