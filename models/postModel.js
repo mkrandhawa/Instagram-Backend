@@ -19,14 +19,18 @@ const postSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  post:{
+    type: String,
+    required: [true, 'Please choose a valid format']
+  },
   comments: [
     {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Comment",
     },
   ],
   user: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   }, // Reference to the User model
 });
