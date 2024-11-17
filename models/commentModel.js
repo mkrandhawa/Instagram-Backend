@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const commentSchema = new mongoose.Schema({
   description: {
-    tyope: String,
+    type: String,
     required: [true, "Your comment must have description"],
     minLength: 10,
     maxLength: 150,
