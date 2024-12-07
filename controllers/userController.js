@@ -36,7 +36,6 @@ const createJWT = (user, statusCode, res) =>{
     })
 }
 
-
 // REGISTER THE USER
 exports.registerUser = async(req, res, next)=>{
 
@@ -75,7 +74,6 @@ exports.registerUser = async(req, res, next)=>{
         }
     }
 }
-
 
 // LOGIN THE USER
 exports.login = async(req, res, next)=>{
@@ -122,7 +120,6 @@ exports.login = async(req, res, next)=>{
         }
     
 }
-
 
 // PROTECT THE PAGE RESTRICTED TO LOGGED IN USERS ONLY
 exports.protect = async(req, res, next) =>{
@@ -232,36 +229,79 @@ exports.getAll = async(req, res, next)=>{
     
 }
 
-exports.addFollower = async (req, res, next) => {
-    try {
-      console.log(req.user.id);
-      const userId = req.user.id; 
-  
-      // Use $push to add a new follower to the "following" array
-      const updatedUser = await User.findByIdAndUpdate(
-        userId, // Pass the ID as the first argument
-        { $push: { following: req.body.following } }, // Add new follower(s) to the "following" field
-        { new: true, runValidators: true } // Return the updated document and validate input
-      );
-  
-      if (!updatedUser) {
-        return res.status(404).json({
-          status: "fail",
-          message: "User not found",
+// Add and Remove Follower
+exports.addRemoveFollower = async(req, res, next)=>{
+
+    try{
+        const userId = req.user.id;
+
+        const id = req.params.id;
+
+        const user = await User.findById(userId);
+
+        const userToFollow = await User.findById(id);
+
+        if(user && userToFollow){
+
+            if(!user.following.includes(id)){
+
+                const updatedUser = await User.updateOne(
+                    {_id: userId},
+                    {$push: {following: id}}, 
+                    {new: true}
+                );
+
+                next(res.status(204).json({
+                    status: 'Success',
+                    message: 'Unfollowed successfully',
+                    data: updatedUser
+                }));
+
+            }else{
+
+                const updatedUser = await User.updateOne(
+                    {_id: userId},
+                    {$pull: {following: id}}, 
+                    {new: true}
+                );
+
+                next(res.status(204).json({
+                    status: 'Success',
+                    message: 'Followed successfully',
+                    data: updatedUser
+                }));
+            }
+
+        }
+    }catch (error) {
+        res.status(500).json({
+          status: "error",
+          message: "An error occurred while removing/adding follower",
+          error: error.message,
         });
       }
-  
-      res.status(200).json({
-        status: "success",
-        message: "Followers added",
-        data: updatedUser,
-      });
-    } catch (error) {
-      res.status(500).json({
-        status: "error",
-        message: "An error occurred while adding followers",
-        error: error.message,
-      });
+}
+
+// Get Saved Posts
+
+exports.getSavedPosts = async(req, res, next)=>{
+
+    const userId = req.user.id;
+
+    if(!userId){
+
+        next( res.status(400).json({
+            status: 'Fail',
+            message: 'Please login/provide valid user ID!'
+        }));
     }
-  };
+
+    const user = await User.findById(userId).populate('savedPosts');
+
+    res.status(200).json({
+        status: 'Success',
+        message: 'Request successful',
+        data: user
+    });
+}
   
