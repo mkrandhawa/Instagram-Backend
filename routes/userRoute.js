@@ -8,7 +8,9 @@ router.get('/home', userController.isLoggedIn);
 
 router.get('/all-users', userController.protect, userController.getAll);
 
-router.patch('/follow', userController.protect, userController.addFollower);
+router.get('/savedPosts', userController.protect, userController.getSavedPosts);
+
+router.patch('/:id/addRemoveFollower', userController.protect, userController.addRemoveFollower);
 
 router.post('/login', userController.login);
 
