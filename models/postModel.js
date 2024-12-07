@@ -19,10 +19,10 @@ const postSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  post:{
+  images:[{
     type: String,
     required: [true, 'Please choose a valid format']
-  },
+  }],
   comments: [
     {
       type: mongoose.Schema.Types.ObjectId,
