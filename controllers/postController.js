@@ -3,9 +3,9 @@ const User = require('../models/userModel');
 const multer = require('multer');
 
 
-// Get Posts 
+// GetAll Posts 
 
-exports.getPosts = async(req, res, next)=>{
+exports.getAll = async(req, res, next)=>{
     
 
     const loggedUserId = req.user.id
@@ -29,7 +29,45 @@ exports.getPosts = async(req, res, next)=>{
            
         });
     }
-}
+};
+
+// Get Post
+
+exports.getPost = async (req, res, next)=>{
+
+  const userId = req.user.id;
+
+  const postId = req.params.id;
+
+  if (!userId || !postId){
+
+    next(res.status(400).json({
+      status: 'Fail',
+      message: 'Login or provide a valid post ID'
+    }));
+    return;
+  }
+
+  const user = await User.findById(userId);
+
+  const post = await Post.findById(postId);
+
+  if(!user || !post){
+
+    next(res.status(500).json({
+      status: 'Fail',
+      message: 'No User/Post found!'
+    }));
+    return;
+  }
+
+  res.status(200).json({
+    status: 'Success',
+    message: 'Post found!',
+    data: post
+  });
+
+};
 
 // Configure multer storage and file filter
 
@@ -109,7 +147,7 @@ exports.uploadPost = async (req, res, next) => {
   });
 };
 
-// Save and unsave a post 
+// Save/Unsave Post 
 
 exports.saveUnsavePost = async(req, res, next)=>{
 
@@ -158,8 +196,60 @@ exports.saveUnsavePost = async(req, res, next)=>{
       data: updatedUser
     }));
   }
-
 };
 
+// Like/UnLike a Post
 
+exports.likeUnlikePost = async (req, res, next)=>{
 
+  let updatedUser;
+
+  const userId = req.user.id;
+
+  const postId = req.params.id;
+
+  if(!userId || !postId){
+    
+    next(res.staus(400).json({
+      status: 'Fail',
+      message: 'Please login/provide post ID'
+    }));
+  }
+
+  const user = await User.findById(userId);
+
+  const post = await Post.findById(postId);
+
+  if(!user || !post){
+
+    next(res.status(500).json({
+      status: 'Fail',
+      message: 'No user/post found'
+    }));
+  }
+
+  const isPostLiked = user.likedPosts.includes(postId);
+
+  if(!isPostLiked){
+
+    updatedUser = await user.updateOne({$push:{likedPosts: postId}}, {new: true});
+
+    next(res.status(200).json({
+      status: 'Success',
+      message: 'Post liked!',
+      data: updatedUser
+    }));
+
+  } else {
+
+    updatedUser = await user.updateOne({$pull:{likedPosts: postId}}, {new: true});
+
+    next(res.status(200).json({
+      status: 'Success',
+      message: 'Post unliked!',
+      data: updatedUser
+    }));
+
+  }
+
+};

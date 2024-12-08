@@ -301,7 +301,7 @@ exports.getSavedPosts = async(req, res, next)=>{
     res.status(200).json({
         status: 'Success',
         message: 'Request successful',
-        data: user
+        data: user.savedPosts
     });
 }
   
