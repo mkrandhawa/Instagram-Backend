@@ -1,7 +1,8 @@
-const mongoose= require('mongoose');
 const User = require('../models/userModel');
+const Story = require('../models/storyModel');
 const jwt = require('jsonwebtoken');
 const {promisify} = require('util');
+const multer = require('multer');
 
 //SIGNING JWT
 const signJWT= (id)=>{
@@ -241,6 +242,15 @@ exports.addRemoveFollower = async(req, res, next)=>{
 
         const userToFollow = await User.findById(id);
 
+
+        if(userId === id){
+
+            next(res.status(400).json({
+                status: 'Fail',
+                message: 'You cannot follow yourself'
+            }));
+        }
+
         if(user && userToFollow){
 
             if(!user.following.includes(id)){
@@ -304,4 +314,131 @@ exports.getSavedPosts = async(req, res, next)=>{
         data: user.savedPosts
     });
 }
-  
+
+// Helper function to Upload Story
+
+const multerStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "public/stories");
+    },
+    filename: (req, file, cb) => {
+        const ext = file.mimetype.split("/")[1];
+        cb(null, `story-${req.user.id}-${Date.now()}.${ext}`);
+    }
+});
+
+const multerFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('video') || file.mimetype.startsWith('image')) {
+        cb(null, true);
+    } else {
+        cb(new Error('You can only upload a video/image file!'), false);
+    }
+}
+
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: multerFilter
+}).single('story');  // 'story' is the name of the field
+
+
+// Upload Story
+exports.uploadStory = async (req, res, next) => {
+    upload(req, res, async (err) => {
+        if (err) {
+            return res.status(400).json({
+                status: 'Fail',
+                message: err.message || "File upload failed."
+            });
+        }
+
+        // Check if the file exists
+        if (!req.file) {
+            return res.status(400).json({
+                status: "fail",
+                message: "A file (image or video) must be provided with the post.",
+            });
+        }
+
+        const user = req.user.id;
+        const file = req.file;  // Access the uploaded file from req.file
+
+        try {
+            // Create a new story entry with the file path
+            const story = await Story.create({
+                user,
+                story: file.path,  // Store the file path or filename in the story
+            });
+
+            // Send the success response
+            res.status(200).json({
+                status: 'Success',
+                message: 'Story added successfully',
+                data: story
+            });
+        } catch (error) {
+            next(error);  // Forward any error to the error handling middleware
+        }
+    });
+};
+
+// Get All Stories
+
+exports.getAllStories = async(req, res, next) =>{
+
+    const userId = req.user.id; 
+
+    // Fetch the user and their following list
+    const user = await User.findById(userId).populate('following');
+
+    if (!user) {
+        return res.status(404).json({
+            status: 'Fail',
+            message: 'User not found'
+        });
+    }
+
+    // Get stories of the user and their following users
+    const userAndFollowingIds = [userId, ...user.following.map(follow => follow._id)];
+
+    const stories = await Story.find({ user: { $in: userAndFollowingIds } }).populate({path: 'user', select: 'username'}); // Populate user details if needed.
+
+    res.status(200).json({
+        status: 'Success',
+        message: 'Stories fetched successfully',
+        data: stories
+    });
+}
+
+// Delete Story
+
+exports.deleteStory = async(req, res, next)=>{
+
+    const userId = req.user.id;
+
+    const storyId = req.params.id;
+
+    const story = await Story.findById(storyId);
+
+    const isTheOwner = story.user._id.toString() === userId.toString();s
+
+    if(!isTheOwner){
+
+        next(res.status(401).json({
+            status: 'Fail',
+            message: 'You do not have permisison to delete this story!'
+        }));
+
+    }
+
+    await Story.findByIdAndDelete(storyId);
+
+    const updatedUser  = await User.findByIdAndUpdate(userId, {$pull:{stories: storyId}}, {new: true});
+
+    res.status(200).json({
+        status: 'Success',
+        message: 'Story Deleted successfully',
+        data: updatedUser
+    });
+    
+
+}

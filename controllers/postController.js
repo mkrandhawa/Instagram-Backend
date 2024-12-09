@@ -1,5 +1,6 @@
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
+const Comment = require('../models/commentModel');
 const multer = require('multer');
 
 
@@ -11,6 +12,7 @@ exports.getAll = async(req, res, next)=>{
     const loggedUserId = req.user.id
 
     const loggedInUser = await User.findById(loggedUserId).select("following");
+
     const following = loggedInUser.following; // List of user IDs
 
     if(following){
@@ -50,7 +52,7 @@ exports.getPost = async (req, res, next)=>{
 
   const user = await User.findById(userId);
 
-  const post = await Post.findById(postId);
+  const post = await Post.findById(postId).populate('comments');
 
   if(!user || !post){
 
@@ -253,3 +255,92 @@ exports.likeUnlikePost = async (req, res, next)=>{
   }
 
 };
+
+
+// Add a comment
+
+exports.addComment = async(req, res, next)=>{
+
+  const userId = req.user.id;
+
+  const postId = req.params.id;
+
+  if (!userId || !postId){
+    next(res.status(400).json({
+      status: 'Fail',
+      message: 'Login or provide valid ID'
+    }));
+  }
+
+  const description = req.body.description;
+
+  const comment = await Comment.create({
+    description,
+    post: postId,
+    user: userId
+  });
+
+  await Post.findByIdAndUpdate(postId, {$push:{comments: comment._id}});
+
+
+  res.status(200).json({
+    status: 'Success',
+    message: 'Comment posted successfully',
+    data: comment
+  });
+
+}
+
+
+// Get Comments on a Post
+
+exports.getAllCommentsOnPost = async (req, res, next) => {
+    const postId = req.params.id; 
+
+
+    const post = await Post.findById(postId).populate({path: 'comments', populate: {path: 'user', select: 'username'}});
+
+    if (!post) {
+      return res.status(404).json({
+        status: 'Fail',
+        message: 'Post not found'
+      });
+    }
+
+    res.status(200).json({
+      status: 'Success',
+      message: 'Comments fetched successfully',
+      data: post.comments
+    });
+
+};
+
+
+// Delete A Comment
+
+exports.deleteComment = async(req, res, next)=>{
+
+  const commentId = req.params.commentId;
+
+
+  const postId = req.params.id;
+
+  if (!commentId || !postId){
+
+    next(res.status(400).json({
+      staus: 'Fail',
+      message: 'No such comment/post'
+    }));
+
+  }
+
+  await Comment.findByIdAndDelete(commentId);
+  
+  await Post.findByIdAndUpdate(postId, {$pull:{comments: commentId}}, {new: true});
+
+
+  res.status(200).json({
+    status: 'Success',
+    message: 'Comments deleted successfully',
+  });
+}
