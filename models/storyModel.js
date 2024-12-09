@@ -1,16 +1,16 @@
 const mongoose = require("mongoose");
 
-const storySchema = new Schema(
+const storySchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId, 
       ref: "User",
       required: true,
     },
-    story: {
+    story: [{
       type: String, 
       required: [true, "A story must have a media file"],
-    },
+    }],
     createdAt: {
       type: Date,
       default: Date.now, 

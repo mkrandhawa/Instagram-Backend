@@ -4,19 +4,19 @@ const commentSchema = new mongoose.Schema({
   description: {
     type: String,
     required: [true, "Your comment must have description"],
-    minLength: 10,
+    minLength: 1,
     maxLength: 150,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  posts: {
-    type: Schema.Types.ObjectId,
+  post: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Post",
   },
-  users: {
-    type: Schema.Types.ObjectId,
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
 });

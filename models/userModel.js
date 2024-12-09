@@ -46,10 +46,16 @@ const userSchema = new mongoose.Schema({
   ],
   savedPosts: [
     {
-      type: mongoose.Schema.  ObjectId,
+      type: mongoose.Schema.ObjectId,
       ref: "Post",
     },
   ],
+  stories:[
+    {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Story'
+    }
+  ]
 });
 
 userSchema.pre('save', async function (next){
