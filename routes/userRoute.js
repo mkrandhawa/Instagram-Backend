@@ -12,6 +12,8 @@ router.get('/savedPosts', userController.protect, userController.getSavedPosts);
 
 router.get('/getAllStories', userController.protect, userController.getAllStories);
 
+router.get('/following', userController.protect, userController.getFollowing);
+
 router.patch('/:id/addRemoveFollower', userController.protect, userController.addRemoveFollower);
 
 router.post('/login', userController.login);

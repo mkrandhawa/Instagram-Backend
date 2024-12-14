@@ -442,3 +442,28 @@ exports.deleteStory = async(req, res, next)=>{
     
 
 }
+
+// Get all following
+
+exports.getFollowing = async(req, res, next)=>{
+
+    const user = req.user.id;
+
+    if(!user){
+
+        next(res.status(400).json({
+            status: 'Fail',
+            message: 'You must be logged in!'
+        }));
+    }
+    const following = await User.findById(user, 'following')
+    .populate({ path: 'following', select: 'username picture' });
+  
+
+    res.status(200).json({
+        status: 'Success',
+        message: 'Your following retrieved successfully',
+        following
+    });
+
+}
