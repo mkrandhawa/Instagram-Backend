@@ -467,3 +467,28 @@ exports.getFollowing = async(req, res, next)=>{
     });
 
 }
+
+// Get not following
+
+exports.getNotFollowing = async(req, res, next)=>{
+
+    const user = req.user.id;
+
+    if(!user){
+
+        next(res.status(400).json({
+            status: 'Fail',
+            message: 'You must be logged in!'
+        }));
+    }
+
+    const currentUser = await User.findById(user);
+    const notFollowing = await User.find({_id:{$nin: [...currentUser.following, user]}}).limit(5);
+
+    res.status(200).json({
+        status: 'Success',
+        message: 'Users that you are not following',
+        data: notFollowing
+    });
+
+}
